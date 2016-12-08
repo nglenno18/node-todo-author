@@ -54,11 +54,40 @@ UserSchema.methods.generateAuthToken = function(){
 
   return user.save().then(function(){
     return token;
-    })
+  });
     //.then(function(token){  -->chain this later in server.js
     //then statement will happen in server.js, in order to allow server.js to CHAIN onto
       //the promise, we need save to be returned
       //that returned value will be passed as the success argument for the next 'then' call
+};
+
+UserSchema.statics.findByToken = function(token){
+  //verify
+  var User = this;    //MODEL method binded with this keyword
+  var decoded;
+  try{
+    decoded = jwt.verify(token, 'secretValue');
+  }catch(e){
+    //.return a promise that will ALWAY reject
+    // return new Promise(function(resolve, reject){
+    //   //if this code runs, we NEVER want User.findOne to runs
+    //   //reject();   // this promise will get returned by findByToken
+    //               //then, it will get rejected inside of server.js
+    //               // So the then(success) case will NOT fire, but the CaTCH BLOCK WILL
+    // });
+    //INSTEAD of returning a new Promise, then REJECTING it right away,
+    return Promise.reject();
+  }
+  //find user'
+  return User.findOne({
+    '_id': decoded._id,
+    //Query a NESTED object (find a user whos token array has an object where the token prop = our token prop)
+    'tokens.token': token,
+    'tokens.access': 'auth'
+  });
+
+
+  //return
 };
 
 var User = mongoose.model('User', UserSchema);

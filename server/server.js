@@ -8,6 +8,8 @@ var {ObjectID} = require('mongodb');
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {authenticate}  = require('./middleware/authenticate');
+
 
 //install express and bodyParser
 
@@ -183,21 +185,14 @@ app.get('/users', function(request, response){
     return response.status(400).send('No USERS in the USER COLLECTION');
   });
 });
-//POST
+
+
+//POST-------------------------------------------------------------------------------
 app.post('/users', function(request, response){
   //create user variable
   var body = _.pick(request.body, ['email', 'password']);
   var newUser = new User(body);
-  // var newUser = new User({
-  //   email: request.body.email,
-  //   password: '123four'
-  // });
 
-  //MODEL and INSTANCE methods
-  // User.findByToken --> //findByToken doesnt exist inside of mongoose, we CREATE it
-  //user.generateAuthToken --> add token onto indiv user doc, saving, adding token, returning to user
-
-  //save user w/ then callbacks for doc, e
   newUser.save().then(function(doc){
     console.log(`\nNEW USER REQUEST: \n${doc}\n`);
     return newUser.generateAuthToken();
@@ -220,6 +215,14 @@ app.post('/users', function(request, response){
     console.log(m);
     return response.status(400).send(m)
   });
+});
+
+//PRIVATEIZE ROUTES --> code for new MIDDLEWARE
+    //**NOW located in './middlware/authenticate.js'
+
+//Turn any one of our routes into a private route
+app.get('/users/me', authenticate, function(request, response){
+  response.send(request.user);
 });
 
 //------------------------------------------------------
