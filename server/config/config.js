@@ -1,8 +1,8 @@
-var env = process.env.NODE_ENV || 'production'; //need to configure NODE_ENV in package.json
+var env = process.env.NODE_ENV || 'development'; //need to configure NODE_ENV in package.json
 console.log(env,`***********`);
 console.log(process.env.PORT);
 
-if(env === 'production'){
+if(env === 'development'){
   //set up mongodb URL
   console.log('\nenv = dev');
   process.env.PORT = 3000;  //remove the default below
