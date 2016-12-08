@@ -1,2 +1,4 @@
 node_modules/
 server/db/mongoose1.js
+playground/hashing1.js
+server/models/user1.js

@@ -142,7 +142,6 @@ app.patch('/todos/:id', function(request, response){
       });
 });
 
-
 //------------------------------
 app.post('/todos/post/', function(request, response){
   var newTodo = new Todo({
@@ -170,6 +169,60 @@ app.post('/todos/post/', function(request, response){
   console.log('BREAKKKKKKKKK\n\n\n');
 });
 
+
+//USERS -----------------------------------------------------------
+//GET
+app.get('/users', function(request, response){
+  User.find().then(function(users){
+    if(!users){
+      console.log('No USERS in the USER COLLECTION');
+      return response.status(400).send('No USERS in the USER COLLECTION');
+    }
+    return response.send(users);
+  }, function(error){
+    return response.status(400).send('No USERS in the USER COLLECTION');
+  });
+});
+//POST
+app.post('/users', function(request, response){
+  //create user variable
+  var body = _.pick(request.body, ['email', 'password']);
+  var newUser = new User(body);
+  // var newUser = new User({
+  //   email: request.body.email,
+  //   password: '123four'
+  // });
+
+  //MODEL and INSTANCE methods
+  // User.findByToken --> //findByToken doesnt exist inside of mongoose, we CREATE it
+  //user.generateAuthToken --> add token onto indiv user doc, saving, adding token, returning to user
+
+  //save user w/ then callbacks for doc, e
+  newUser.save().then(function(doc){
+    console.log(`\nNEW USER REQUEST: \n${doc}\n`);
+    return newUser.generateAuthToken();
+  }).then(function(token){
+    //creating a custom header to store token value
+      //becomes the jwt id to use later, found in Postman for now
+    response.header('x-auth', token).send(newUser);
+  })
+  .catch(function(e){
+    var m = '';
+    //console.log(e);
+    if(e.name === 'ValidationError'){
+      if(e.errors.email){
+        m = e.errors.email.message;
+      }
+      else if(e.errors.password){m = e.errors.password.message;}
+    }
+    else if(e.code && (e.code === 11000)){m = e.errmsg;}
+    else{return response.status(400).send(e);}
+    console.log(m);
+    return response.status(400).send(m)
+  });
+});
+
+//------------------------------------------------------
 app.listen(port, function(){
   console.log(`Connected to server on port ${port}`);
 });
