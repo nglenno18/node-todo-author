@@ -1,73 +1,69 @@
 const expect = require('expect');
 const request = require('supertest');
-
 const {ObjectID} = require('mongodb');
+
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
-const {User} = require('./../models/user');
 
-//TESTIN LIFE CYCLE METHOD
-//SEED DATA --> 2 todo items in an array
-//make up an array of dummy todos
 const todosArray = [{
   _id: new ObjectID(),
-  text: "First Test TODO example"
-},{
+  text: 'First test TODO example'
+}, {
   _id: new ObjectID(),
-  text: "Second Test TODO example",
+  text: 'Second test todo',
   completed: true,
   completedAt: 333
 }];
-//make sure db is empty before every run if you want to test Post/Todos,
-//OR make sure db has dummy todosArray to test GET /todos
-beforeEach(function(done){
-  //Todo.remove({}).then(()=>done());
-  Todo.remove({}).then(()=>{
+
+beforeEach((done) => {
+  Todo.remove({}).then(() => {
     return Todo.insertMany(todosArray);
-  }).then(()=> done());
+  }).then(()=>done());
 });
 
-// describe('POST /todos', function(){
-//   //TEST CASE 1
-//   it('Should create a new TODO', function(done){
-//     var text = 'Test todo next text';
-//     request(app)
-//       .post('/todos')
-//       .send({text})
-//       .expect(200)
-//       .expect(function(response){
-//         expect(response.body.text).toBe(text);
-//       })
-//       //check what got stored
-//       .end(function(error, response){
-//         if(error){
-//           return done(error);
-//         }
-//         //make request to db, fetching all the todos to make sure request was added
-//         Todo.find({text}).then(function(todos){
-//           expect(todos.length).toBe(1); //is 1 bc we always wipe db
-//           expect(todos[0].text).toBe(text);
-//           done();
-//         }).catch((e)=>done(e));
-//       });
-//   });
 
-//   //TEST 2
-//   it('Should NOT create Todo w/ Invalid body data', function(done){
-//     request(app)
-//       .post('/todos')
-//       .send({})
-//       .expect(400)
-//       .end(function(err, res){
-//         if(err) return done(err);
-//
-//         Todo.find().then(function(todos){
-//           expect(todos.length).toBe(2);     //is 0 bc we always wipe the db
-//           done();
-//         }).catch((e)=>done(e));
-//       });
-//   });
-// });
+describe('POST /todos', function(){
+  //TEST CASE 1
+  it('Should create a new TODO', function(done){
+    var text = 'Test todo next text';
+    request(app)
+      .post('/todos')
+      .send({text})
+      .expect(200)
+      .expect(function(response){
+        expect(response.body.text).toBe(text);
+      })
+      //check what got stored
+      .end(function(error, response){
+        if(error){
+          return done(error);
+        }
+        //make request to db, fetching all the todos to make sure request was added
+        Todo.find({text}).then(function(todos){
+          expect(todos.length).toBe(1); //is 1 bc we always wipe db
+          expect(todos[0].text).toBe(text);
+          done();
+        }).catch((e)=>done(e));
+      });
+  });
+
+  //TEST 2
+  it('Should NOT create Todo w/ Invalid body data', function(done){
+    request(app)
+      .post('/todos')
+      .send({})
+      .expect(400)
+      .end(function(err, res){
+        if(err){
+          return done(err);
+        }
+        Todo.find().then(function(todos){
+          expect(todos.length).toBe(2);     //is 0 bc we always wipe the db
+          done();
+        }).catch((e)=>done(e));
+      });
+  });
+});
 
 
 
@@ -78,6 +74,7 @@ beforeEach(function(done){
         .get('/todos')
         .expect(200)
         .expect((res)=> { //success instead of todos, specified in server.js /Get /todos method
+          console.log(res.body.TodosList);
           expect(res.body.TodosList.length).toBe(2);
         })
       .end(done);

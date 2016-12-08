@@ -19,22 +19,27 @@ console.log(port);
 app.use(bodyParser.json());
 
 //POST requests
-// app.post('/todos', function(request, response){
-//   //console.log(request.body); //displays the POST request json body
-//   var newTodo = new Todo({
-//     text: request.body.text
-//   });
+app.post('/todos', function(request, response){
+  //console.log(request.body); //displays the POST request json body
+  var newTodo = new Todo({
+    text: request.body.text
+  });
 
-//   newTodo.save().then(function(doc){
-//     console.log('--------------------------------------\nPOST /todos http request from POSTMAN ',
-//     '\n    - SHould ADD a NEW TODO to the mongoDB,\n       Display the new Todo: \n--------------------------------------');
-//     console.log(JSON.stringify(doc, undefined, 2));
-//     response.send(doc);       //send the doc back to postman
-//   }, function(error){
-//     console.log(error);
-//     response.status(400).send(error);     //send the error back to the POST request
-//   });
-// });
+  newTodo.save().then(function(doc){
+    console.log('--------------------------------------\nPOST /todos http request from POSTMAN ',
+    '\n    - SHould ADD a NEW TODO to the mongoDB,\n       Display the new Todo: \n--------------------------------------');
+    console.log(JSON.stringify(doc, undefined, 2));
+    return response.send(doc);       //send the doc back to postman
+  }, function(error){
+    var m = 'Unable to create the Requested TODO: ';
+    if(error.errors.text){
+      m += error.errors.text.message;
+      console.log(m);
+      return response.status(400).send(m);
+    }
+    return response.status(400).send(error);     //send the error back to the POST request
+  });
+});
 
 //GET requests
 app.get('/todos', function(request, response){
