@@ -2,6 +2,8 @@ var mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
+
 
 var UserSchema = new mongoose.Schema({
     email: {
@@ -32,6 +34,7 @@ var UserSchema = new mongoose.Schema({
     }]
 });
 
+
 //OVERRIDE a method to restrict what properties of the User mongoose model when it is converted to a json value Objec
 UserSchema.methods.toJSON = function(){
   var user = this;
@@ -55,10 +58,6 @@ UserSchema.methods.generateAuthToken = function(){
   return user.save().then(function(){
     return token;
   });
-    //.then(function(token){  -->chain this later in server.js
-    //then statement will happen in server.js, in order to allow server.js to CHAIN onto
-      //the promise, we need save to be returned
-      //that returned value will be passed as the success argument for the next 'then' call
 };
 
 UserSchema.statics.findByToken = function(token){
@@ -68,14 +67,6 @@ UserSchema.statics.findByToken = function(token){
   try{
     decoded = jwt.verify(token, 'secretValue');
   }catch(e){
-    //.return a promise that will ALWAY reject
-    // return new Promise(function(resolve, reject){
-    //   //if this code runs, we NEVER want User.findOne to runs
-    //   //reject();   // this promise will get returned by findByToken
-    //               //then, it will get rejected inside of server.js
-    //               // So the then(success) case will NOT fire, but the CaTCH BLOCK WILL
-    // });
-    //INSTEAD of returning a new Promise, then REJECTING it right away,
     return Promise.reject();
   }
   //find user'
@@ -85,10 +76,32 @@ UserSchema.statics.findByToken = function(token){
     'tokens.token': token,
     'tokens.access': 'auth'
   });
-
-
-  //return
 };
+//attach an event to schema --> userschema.pre runs code BEFORE an event, event is saved,
+    //and then the code is ran.
+    //next() call is when the data is ACTUALLY saved to the DB
+    //WE will be hashing the PASSWORD inside of the caqllback
+UserSchema.pre('save', function(next){
+  //access to the indiv doc
+  var user = this;
+
+  //check if password was modified
+  //user.isModified('password') //takes indiv property and return true or false
+  if(user.isModified('password')){ //LOAD in our calls
+    //call to genSalt
+    bcrypt.genSalt(10, function(error, salt){
+      bcrypt.hash(user.password, salt, function(err,hash){
+        //WANT to store the HASH in our DB
+        console.log(hash);
+        user.password = hash;
+        next();
+      });
+    });
+    //call to hash
+  }else {
+    next();
+  }
+}); //STORES A HASHED password instead of a normal plain text
 
 var User = mongoose.model('User', UserSchema);
 
