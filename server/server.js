@@ -211,7 +211,7 @@ app.post('/users', function(request, response){
       else if(e.errors.password){m = e.errors.password.message;}
     }
     else if(e.code && (e.code === 11000)){m = e.errmsg;}
-    else{return response.status(400).send(e);}
+    else{return response.status(401).send(e);}
     console.log(m);
     return response.status(400).send(m)
   });
@@ -223,7 +223,8 @@ app.post('/users', function(request, response){
 //Turn any one of our routes into a private route
 app.get('/users/me', authenticate, function(request, response){
   response.send(request.user);
-});
+}); //need use seed data to test authenticate
+    //route needs an x-auth token passed into it
 
 //------------------------------------------------------
 app.listen(port, function(){

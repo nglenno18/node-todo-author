@@ -4,23 +4,12 @@ const {ObjectID} = require('mongodb');
 
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
+const {User} = require('./../models/user');
 
-const todosArray = [{
-  _id: new ObjectID(),
-  text: 'First test TODO example'
-}, {
-  _id: new ObjectID(),
-  text: 'Second test todo',
-  completed: true,
-  completedAt: 333
-}];
+const {todosArray, populateTodos, usersArray, populateUsers} = require('./seed/seed');
 
-beforeEach((done) => {
-  Todo.remove({}).then(() => {
-    return Todo.insertMany(todosArray);
-  }).then(()=>done());
-});
-
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', function(){
   //TEST CASE 1
@@ -208,3 +197,90 @@ describe('POST /todos', function(){
         .end(done);
     });
   });
+
+
+  //---------------------------------------------------------------
+  //--------------------TEST the SEED DATA in USERS----------------
+  describe('GET /users/me', function(){
+    //test when it has a VALID auth token
+    it('Should return User IF authenticated Valid token is provided', function(done){
+      request(app)
+        .get('/users/me')
+        //SET A HEADER valued from the token value inside the first user
+        .set('x-auth', usersArray[0].tokens[0].token)
+        .expect(200)
+        .expect(function(response){
+          expect(response.body._id).toBe(usersArray[0]._id.toHexString());
+          expect(response.body.email).toBe(usersArray[0].email);
+        })
+        .end(done);
+    });
+    //test when it is missing a token
+    it('Should return a 401 if User is NOT Validated (wrong/invalid TOKEN)', function(done){
+      request(app)
+        .get('/users/me')
+        //.set()
+        .expect(401)
+        .expect(function(response){
+          //expect that the response body is empty, no user ObjectID
+          expect(response.body).toEqual({});
+        })
+        .end(done);
+    });
+  });//end describe block
+
+  //TEST CASES for the SIGNUP route
+  describe('POST /users', function(){
+    it('Should CREATE a User (Valid data)', function(done){
+      var email = 'fakebutVALID@email.com';
+      var password = '123Pass';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(200)
+        .expect(function(response){
+          expect(response.headers['x-auth']).toExist();
+          expect(response.body.email).toBe(email);
+          expect(response.body._id).toExist();
+        })
+        .end(function(err){
+          if(err){
+            return done(err);
+          }
+          User.findOne({email}).then(function(user){
+            expect(user).toExist();
+            expect(user.password).toNotBe(password); //bc it is hashede,not plain text
+            done();
+          });
+        });
+    });
+
+    it('Should Return a VALIDATION ERROR if the EMAIL is INVALID', function(done){
+      var email = 'fake and invalid email@i.com';
+      var password = 'validPassword';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done);
+    });
+    it('Should Return a VALIDATION ERROR if the PASSWORD is INVALID', function(done){
+      var email = 'fakeDemail@i.com';
+      var password = 'not';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done);
+    });
+
+    it('Should NOT create User if EMAIL is VALID, but TAKEN (Duplicate Email Error)', function(done){
+      var email = usersArray[0].email;
+      var password = 'validPassword';
+      request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done);
+    });
+  });//end describe block for SIGN UP ROUTE
