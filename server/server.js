@@ -246,6 +246,19 @@ app.post('/users/login', function(request, response){
   });
 });
 
+//--------LOG OUT A USER----------DELETE remove a token from the tokens array
+        //delete the token from the currently logged out user
+    //Make route private --> must be authenticated to ever run code (authenticate.js)
+        // to do that, specify the middleware as authenticate
+app.delete('/users/me/token', authenticate, function(request, response){
+  //call instance method --> create removeToken in user.js***
+  request.user.removeToken(request.token).then(function(){
+    response.status(200).send('Logged OUT');
+  }, function(){  //callback to then if any errors
+    response.status(400).send('UNABLE to Log OUT');
+  });
+});
+
 
 //------------------------------------------------------
 app.listen(port, function(){

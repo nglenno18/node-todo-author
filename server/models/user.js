@@ -60,6 +60,23 @@ UserSchema.methods.generateAuthToken = function(){
   });
 };
 
+UserSchema.methods.removeToken = function(tokenToDelete){
+  //remove any object that has the tokenToDelete value we passed in
+    //use MongoDB operator $pull
+  var user = this;
+
+  //return to allow chain together the call we set up in server.js
+  return user.update({  //if match, will remove not just tokenpropert,
+                        // but the ENTIRE object (w/ token prop, id) --> lose one from tokens array
+    $pull: {
+        tokens:{
+          token: tokenToDelete
+        }
+    }
+  });
+  //call the update method to update the array
+};
+
 UserSchema.statics.findByToken = function(token){
   //verify
   var User = this;    //MODEL method binded with this keyword
