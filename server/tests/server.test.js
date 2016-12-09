@@ -335,4 +335,28 @@ describe('POST /todos', function(){
         });
     });
 
-  });//end DESCRIBE BLOCK
+  });//end DESCRIBE BLOCK to TEST Login POST ROUTES
+
+  //LOG OUT Testing
+  describe('DELETE /users/me/token', function(){
+    it('Should REMOVE a VALID TOKEN from a current User Token collection', function(done){
+      var sampleToken = usersArray[0].tokens[0].token;
+      console.log('Sample Token\n\t', sampleToken);
+
+      //FIRST, set the x-auth to the sampleToken, ASSERT a 200
+      request(app)
+        .delete(`/users/me/token`)
+        //SET the x-auth token = to sampleToken
+        .set('x-auth', sampleToken)
+        .expect(200)
+        //add an ASYNCHRONOUS .end() call to make an ASSERTION after the TOKEN is set
+        .end(function(error, response){
+          if(error){return done(error);}
+          //find the user and verify the tokens array is one less (0)
+          User.findById(usersArray[0]._id).then(function(user){
+            expect(user.tokens.length).toBe(0);
+            done();
+          }).catch((e)=>done(e));
+        });
+    });
+  });//end Describe {} TESTING LOG OUT delete routes
