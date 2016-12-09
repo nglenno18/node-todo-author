@@ -1,4 +1,7 @@
 node_modules/
+server/server1.js
 server/db/mongoose1.js
-playground/hashing1.js
 server/models/user1.js
+server/models/user2.js
+playground/hashing1.js
+playground/hashing2.js
