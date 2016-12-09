@@ -251,7 +251,7 @@ describe('POST /todos', function(){
             expect(user).toExist();
             expect(user.password).toNotBe(password); //bc it is hashede,not plain text
             done();
-          });
+          }).catch((e) => done(e));
         });
     });
 
@@ -284,3 +284,55 @@ describe('POST /todos', function(){
         .end(done);
     });
   });//end describe block for SIGN UP ROUTE
+
+
+  //DESCRIBE BLOCK for USER Login POST ROUTES
+  describe('POST /users/login', function(){
+    it('Should LOGIN user and return AUTH Token', function(done){
+      //need seed data
+      request(app)
+        .post('/users/login')
+        .send({
+          email: usersArray[1].email,
+          password: usersArray[1].password
+        })
+        .expect(200)
+        //expect that the response header has anx-auth Token
+        .expect(function(response){
+          expect(response.headers['x-auth']).toExist();
+        })
+        .end(function(error, response){
+          if(error){
+            return done(error);
+          }
+          User.findById(usersArray[1]._id).then(function(user){
+            expect(user.tokens[0]).toInclude({
+              access: 'auth',
+              token: response.headers['x-auth']
+            });
+            done();
+          }).catch((e) => done(e));   //ESSENTIAL TO get a descripted error message
+        });
+    });
+
+    it('Should REJECT and INVALID LOGIN', function(done){
+      request(app)
+        .post('/users/login')
+        .send({
+          email: usersArray[1].email,
+          password: 'wrongPassword'
+        })
+        .expect(400)
+        .expect(function(response){
+          expect(response.headers['x-auth']).toNotExist();
+        })
+        .end(function(error, response){
+          if(error){ return done(error);}
+          User.findById(usersArray[1]._id).then(function(user){
+            expect(user.tokens.length).toBe(0);
+            done();
+          }).catch((e)=>done(e));
+        });
+    });
+
+  });//end DESCRIBE BLOCK

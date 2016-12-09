@@ -226,6 +226,7 @@ app.get('/users/me', authenticate, function(request, response){
 }); //need use seed data to test authenticate
     //route needs an x-auth token passed into it
 
+//--------------------------------------------------------------
 //POST REQUEST to LOG IN
 app.post('/users/login', function(request, response){
   var body = _.pick(request.body, ['email', 'password']);
