@@ -226,6 +226,26 @@ app.get('/users/me', authenticate, function(request, response){
 }); //need use seed data to test authenticate
     //route needs an x-auth token passed into it
 
+//POST REQUEST to LOG IN
+app.post('/users/login', function(request, response){
+  var body = _.pick(request.body, ['email', 'password']);
+  console.log(body.email);
+  //VERIFY route is set up by using response.send(bodydata)
+  User.findByCredentials(body.email, body.password)
+  .then(function(user){
+    //response.send(user);
+    //CREATED the method to create new tokens for user
+    //RETURN to keep chain alive
+    return user.generateAuthToken().then(function(token){
+      response.header('x-auth', token).send(user);
+    });
+  }).catch(function(e){
+    console.log(e);
+    response.status(400).send(`${e}`);
+  });
+});
+
+
 //------------------------------------------------------
 app.listen(port, function(){
   console.log(`Connected to server on port ${port}`);

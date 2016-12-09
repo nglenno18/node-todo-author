@@ -12,8 +12,7 @@ var authenticate = function(request, response, next){
     //need to call next, otherwise, GET /users/me route will never fire
     next();
   }).catch(function(e){
-    console.log(e);
-    response.status(401).send(e);
+    response.status(400).send();
   });
 };
 

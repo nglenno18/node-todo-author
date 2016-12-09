@@ -77,6 +77,32 @@ UserSchema.statics.findByToken = function(token){
     'tokens.access': 'auth'
   });
 };
+
+UserSchema.statics.findByCredentials = function(email, password){
+  var User = this;
+
+  return User.findOne({email}).then(function(user){
+    if(!user){
+      return Promise.reject(`Email:(${email}) -- did NOT match an Existing User`);
+    }
+    //console.log(user);
+    //CREATE a new Schema method findByCredentials in user.js
+    return new Promise(function(resolve, reject){
+      //use bcrypt.compare to compare password and user.password
+      bcrypt.compare(password, user.password, function(error, response){
+        console.log(response);
+        if(response){
+          resolve(user);
+        }else{
+          reject('Password is INCORRECT');   //should send a 400 back
+        }
+      });
+    });
+  });
+};
+
+
+
 //attach an event to schema --> userschema.pre runs code BEFORE an event, event is saved,
     //and then the code is ran.
     //next() call is when the data is ACTUALLY saved to the DB
