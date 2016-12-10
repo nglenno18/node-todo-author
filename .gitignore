@@ -7,3 +7,4 @@ playground/hashing1.js
 playground/hashing2.js
 server/tests/serverNOrelations.test1.js
 server/serverNOrelations.js
+server/config/config.json

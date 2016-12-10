@@ -51,7 +51,8 @@ UserSchema.methods.generateAuthToken = function(){
   var access = 'auth';
   var token = jwt.sign(
     {_id: user._id.toHexString(), access},
-    'secretValue').toString();
+    // 'secretValue').toString();
+    process.env.JWT_SECRET).toString();
 
   user.tokens.push({access, token});
 
@@ -82,7 +83,8 @@ UserSchema.statics.findByToken = function(token){
   var User = this;    //MODEL method binded with this keyword
   var decoded;
   try{
-    decoded = jwt.verify(token, 'secretValue');
+    // decoded = jwt.verify(token, 'secretValue');
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   }catch(e){
     return Promise.reject();
   }
