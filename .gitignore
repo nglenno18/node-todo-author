@@ -5,3 +5,5 @@ server/models/user1.js
 server/models/user2.js
 playground/hashing1.js
 playground/hashing2.js
+server/tests/serverNOrelations.test1.js
+server/serverNOrelations.js

@@ -17,6 +17,7 @@ describe('POST /todos', function(){
     var text = 'Test todo next text';
     request(app)
       .post('/todos')
+      .set('x-auth', usersArray[0].tokens[0].token)
       .send({text})
       .expect(200)
       .expect(function(response){
@@ -40,6 +41,7 @@ describe('POST /todos', function(){
   it('Should NOT create Todo w/ Invalid body data', function(done){
     request(app)
       .post('/todos')
+      .set('x-auth', usersArray[0].tokens[0].token)
       .send({})
       .expect(400)
       .end(function(err, res){
@@ -55,16 +57,17 @@ describe('POST /todos', function(){
 });
 
 
-
   //DESCRIBE BLOCK
   describe('GET /todos', function(){
     it('Should get all TODOS', function(done){
       request(app)
         .get('/todos')
+        .set('x-auth', usersArray[0].tokens[0].token)
         .expect(200)
         .expect((res)=> { //success instead of todos, specified in server.js /Get /todos method
           console.log(res.body.TodosList);
-          expect(res.body.TodosList.length).toBe(2);
+          // expect(res.body.TodosList.length).toBe(2);
+          expect(res.body.TodosList.length).toBe(1);  //only for the firstUser, not whole collection
         })
       .end(done);
     });

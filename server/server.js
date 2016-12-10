@@ -21,10 +21,12 @@ console.log(port);
 app.use(bodyParser.json());
 
 //POST requests
-app.post('/todos', function(request, response){
-  //console.log(request.body); //displays the POST request json body
+//*****EDITS --> convert the POST /todos ROUTE
+    //add the authenticate middleware to make this ROUTE private
+app.post('/todos', authenticate, function(request, response){
   var newTodo = new Todo({
-    text: request.body.text
+    text: request.body.text,
+    _creator: request.user._id
   });
 
   newTodo.save().then(function(doc){
@@ -44,8 +46,12 @@ app.post('/todos', function(request, response){
 });
 
 //GET requests
-app.get('/todos', function(request, response){
-  Todo.find().then(function(TodosList){
+//Convert the GET /todos route to link with the Users
+  //add the authenticate middleware to make this ROUTE private (requires an x-auth token to use)
+app.get('/todos', authenticate, function(request, response){
+  Todo.find({
+    _creator: request.user._id
+  }).then(function(TodosList){
     console.log('--------------------------------------\nGET /todos http request from POSTMAN ',
     '\n\t- SHould RETURN ALL TODOS from mongoDB: \n--------------------------------------');
     console.log(TodosList);

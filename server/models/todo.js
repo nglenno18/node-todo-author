@@ -14,6 +14,12 @@ var Todo = mongoose.model('Todo', {
   completedAt: {
     type: Number,
     default: null
+  },
+  //log the id of the USer object that Created it
+  _creator:{
+    //type is going to be an OBJECTID in a user from the db
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
   }
 });
 

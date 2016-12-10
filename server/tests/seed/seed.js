@@ -1,25 +1,5 @@
 //load objectId constructor functionc
 const {ObjectID} = require('mongodb');
-//----------TODOS-----------------------------------------------------
-const {Todo} = require('./../../models/todo');
-
-const todosArray = [{
-  _id: new ObjectID(),
-  text: 'First test TODO example'
-}, {
-  _id: new ObjectID(),
-  text: 'Second test todo',
-  completed: true,
-  completedAt: 333
-}];
-
-//function from the server.test beforeEach method
-const populateTodos = function(done) {
-  Todo.remove({}).then(() => {
-    return Todo.insertMany(todosArray);
-  }).then(()=>done());
-};
-
 //----------USERS-----------------------------------------------------
 const{User} = require('./../../models/user');
 const jwt = require('jsonwebtoken');
@@ -40,6 +20,28 @@ const usersArray = [{
   email: 'bradenjames@example.com',
   password: 'userTwoPass'
 }];
+
+//----------TODOS-----------------------------------------------------
+const {Todo} = require('./../../models/todo');
+
+const todosArray = [{
+  _id: new ObjectID(),
+  text: 'First test TODO example',
+  _creator: userOneID
+}, {
+  _id: new ObjectID(),
+  text: 'Second test todo',
+  completed: true,
+  completedAt: 333,
+  _creator: userTwoID
+}];
+
+//function from the server.test beforeEach method
+const populateTodos = function(done) {
+  Todo.remove({}).then(() => {
+    return Todo.insertMany(todosArray);
+  }).then(()=>done());
+};
 
 //now populate the USer DB
     //insertMany WILL NOT run our middleware --> plain text password is stored, not HASHED
