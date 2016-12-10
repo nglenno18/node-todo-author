@@ -80,6 +80,8 @@ describe('POST /todos', function(){
         // .get(`/todos/:id`)
         // .get(`/todos/${todos[0]._id}`) --> need to convert ObjectID to string
         .get(`/todos/${todosArray[0]._id.toHexString()}`)
+        //UPDATE: --> we know that the first todo we just got belongs to the first user
+        .set('x-auth', usersArray[0].tokens[0].token)
         .expect(200)
         .expect(function(response){
           expect(response.body.correctTodo.text).toBe(todosArray[0].text);
@@ -87,12 +89,11 @@ describe('POST /todos', function(){
         .end(done);
     });
 
-
-    //CHALLENGE
     it('Should return a 404 if the TODO is not found', function(done){
       //make sure you get a 404 back
       request(app)
         .get(`/todos/5845c420f7cd89bc14f778d9`)
+        .set('x-auth', usersArray[0].tokens[0].token)          //BUT be logged in as the wrong user
         .expect(404)
         .end(done);
     });
@@ -100,7 +101,19 @@ describe('POST /todos', function(){
     it('Should return a 404 if the ID is not a VALIDE ObjectID', function(done){
       // /todos/123
       request(app)
-        .get(`/todos/123`)
+        .get(`/todos/123`)    //NOT a valid user ID
+        .set('x-auth', usersArray[0].tokens[0].token)
+        .expect(404)
+        .end(done);
+    });
+
+    it('Should NOT return a TODO doc created by another USER', function(done){
+      //make sure you get a 404 back
+      var todoID = todosArray[0]._id.toHexString();
+      request(app)
+        // .get(`/todos/5845c420f7cd89bc14f778d9`)
+        .get(`/todos/${todoID}`)                  //get a real TODO from first user
+        .set('x-auth', usersArray[1].tokens[0].token)        //BUT be logged in as the 2nd user
         .expect(404)
         .end(done);
     });
@@ -110,10 +123,12 @@ describe('POST /todos', function(){
   //DESCRIBE BLOCK for Delete Tests
   describe('DELETE /todos/:id', function(){
     it('Should remove a todo', function(done){
+      //Trying to REMOVE the SECOND TODO (belongs to User 2)
       var hexId = todosArray[1]._id.toHexString();   //delete the second item
 
       request(app)
         .delete(`/todos/${hexId}`)
+        .set('x-auth', usersArray[1].tokens[0].token)   //authenticated as 2nd User
         .expect(200)
         .expect(function(response){
           expect(response.body.todo._id).toBe(hexId);
@@ -126,26 +141,46 @@ describe('POST /todos', function(){
           Todo.findById(hexId).then(function(todo){
             expect(todo).toNotExist();
             done();
-          }).catch(function(error){
-            done(error);
-          });
+          }).catch((e) => done(e));
         });
     });
 
-    it('Should return 404 if todo is NOT found', function(done){
-      var hexId = `58470263786f8ac433838fa3`; //ID is valid, but not found in collection
+    it('Should NOT remove a TODO that belongs to another USER', function(done){
+      //Trying to REMOVE the SECOND TODO (belongs to User 2)
+      //LOGIN as WRONG USER
+      var hexId = todosArray[0]._id.toHexString();   //delete the FIRST item
 
       request(app)
         .delete(`/todos/${hexId}`)
+        .set('x-auth', usersArray[1].tokens[0].token)   //authenticated as 2nd User
+        .expect(404)
+        .end(function(error, response){
+          if(error){
+            return done(error);   //pass in error to be handled by mocha
+          }
+          //query database using findById using toNotExist
+          Todo.findById(hexId).then(function(todo){
+            expect(todo).toExist();   //DELETION should never have happend, so it should still be there
+            done();
+          }).catch((e) => done(e));
+        });
+    });
+
+    it('Should NOT remove a TODO, return 404 if todo is NOT found', function(done){
+      var hexId = `58470263786f8ac433838fa3`; //ID is valid, but not found in collection
+      request(app)
+        .delete(`/todos/${hexId}`)
+        .set('x-auth', usersArray[1].tokens[0].token)
         .expect(404)
         .end(done);
     });
 
-    it('Should return 404 if todo is NOT VALID', function(done){
+    it('Should NOT remove a TODO, return 404 if todo is NOT VALID', function(done){
       var hexId = `58470263786f8ac433838fa3333`; //ID is NOT valid
 
       request(app)
         .delete(`/todos/${hexId}`)
+        .set('x-auth', usersArray[1].tokens[0].token)
         .expect(404)
         .end(done);
     });
@@ -159,11 +194,12 @@ describe('POST /todos', function(){
       //200 back
       //response body has a text property equal to what you set, completed is true,
           //and completedat is a number .toBeA
-      var hexId = todosArray[0]._id.toHexString();
+      var hexId = todosArray[0]._id.toHexString();  //FIRST TODO
       console.log(hexId);
       var insertText = 'This is the substitute text that test should insert into the first Todo';
       request(app)
         .patch(`/todos/${hexId}`)
+        .set('x-auth', usersArray[0].tokens[0].token)
         .send({
           completed: true,
           text: insertText
@@ -177,16 +213,32 @@ describe('POST /todos', function(){
         .end(done);
     });
 
+    it('Should NOT update another Users TODO (Does not have authentication)', function(done){
+      var hexId = todosArray[0]._id.toHexString();  //FIRST TODO
+      console.log(hexId);
+      var insertText = 'This text should not be able to be inputted, User does not have authority';
+      request(app)
+        .patch(`/todos/${hexId}`)
+        .set('x-auth', usersArray[1].tokens[0].token) //login as WRONG USER
+        .send({
+          completed: true,
+          text: insertText
+        })
+        .expect(404)
+        .end(done);
+    });
+
     it('Should Clear completedAt when Todo is NOT completed', function(done){
       //grab id of second todo item
       //update text, set completed to false
       //200
       //text changed, completed false, completedAt is null .toNotExist
-      var secondID = todosArray[1]._id.toHexString();
+      var secondID = todosArray[0]._id.toHexString();
       console.log(secondID);
       var textToInsert = 'This is a sub text to see if completedAt is cleared when completed value is false';
       request(app)
         .patch(`/todos/${secondID}`)
+        .set('x-auth', usersArray[0].tokens[0].token)
         .send({
           completed: false,
           text: textToInsert
@@ -309,7 +361,8 @@ describe('POST /todos', function(){
             return done(error);
           }
           User.findById(usersArray[1]._id).then(function(user){
-            expect(user.tokens[0]).toInclude({
+            // expect(user.tokens[0]).toInclude({
+            expect(user.tokens[1]).toInclude({ //added tokens to 2nd user
               access: 'auth',
               token: response.headers['x-auth']
             });
@@ -332,7 +385,7 @@ describe('POST /todos', function(){
         .end(function(error, response){
           if(error){ return done(error);}
           User.findById(usersArray[1]._id).then(function(user){
-            expect(user.tokens.length).toBe(0);
+            expect(user.tokens.length).toBe(1); //added tokens to 2nd user
             done();
           }).catch((e)=>done(e));
         });

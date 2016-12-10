@@ -63,8 +63,8 @@ app.get('/todos', authenticate, function(request, response){
 });
 
 
-//5845c420f7cd89bc14f778d7
-app.get('/todos/:id', function(request, response){
+//NEED TO AUTHENTICATE, only available if logged in (PRIVATEIZE THIS ROUTE)
+app.get('/todos/:id', authenticate, function(request, response){
   //console.log(request.params);    //displays id inputted
   var requestedID = '';
   console.log(`\n\nRequested ID: `, request.params);
@@ -75,11 +75,16 @@ app.get('/todos/:id', function(request, response){
   }else {
     requestedID = request.params.id;
   }
-  Todo.findById(requestedID).then(function(correctTodo){
+  //CHANGE below query (W/ FINDBYID, a user logged in, can access someone elses todo by applying the todos id)
+  // Todo.findById(requestedID).then(function(correctTodo){
+  Todo.findOne({
+    _id: requestedID,
+    _creator: request.user._id  //BIG LINE******
+  }).then(function(correctTodo){
     console.log('--------------------------------------\nGET /todos/:id http request for specific ID',
     '\n\t- SHould RETURN TODO w/ Specific ID from mongoDB: \n--------------------------------------');
     if(!correctTodo){
-      var err = `ID(${request.params.id}) is MISSING from the USER Collection`;
+      var err = `ID(${requestedID}) is MISSING from this USER Collection`;
       console.log(err);
       return response.status(404).send(err);
     }
@@ -87,13 +92,13 @@ app.get('/todos/:id', function(request, response){
     return response.send({correctTodo});
   }, function(failedTodo){
     console.log(failedTodo);
-    return response.status(400).send(failedTodo);
+    return response.status(404).send(failedTodo);
   });
 });
 
 
 //CREATE A DELETE route /////////////////////////////
-app.delete('/todos/:id', function(request, response){
+app.delete('/todos/:id', authenticate, function(request, response){
   //get the id
   var requestedID = ''; //new ObjectID(request.params.id);
   console.log(`\nREQUESTED ID: `, request.params.id);
@@ -108,7 +113,10 @@ app.delete('/todos/:id', function(request, response){
     //remove todo by id
         //success --> if no doc, send 404
         //error --> 400 with empty body
-    Todo.findByIdAndRemove(requestedID).then(function(deletedTodo){
+    Todo.findOneAndRemove({
+      _id: requestedID,
+      _creator: request.user._id
+    }).then(function(deletedTodo){
       if(!deletedTodo){
         return response.status(404).send('ID missing from Todo Collection');
       }
@@ -120,7 +128,7 @@ app.delete('/todos/:id', function(request, response){
   }
 });
 
-app.patch('/todos/:id', function(request, response){
+app.patch('/todos/:id', authenticate, function(request, response){
   var id = request.params.id;
   //use lodash
   var body = _.pick(request.body, ['text', 'completed']);
@@ -139,7 +147,9 @@ app.patch('/todos/:id', function(request, response){
     body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true})
+  //findOneAndUpdate
+  Todo.findOneAndUpdate({_id: id, _creator: request.user._id},
+    {$set: body}, {new: true})
       .then(function(todo){
         if(!todo){
           return response.status(404).send();

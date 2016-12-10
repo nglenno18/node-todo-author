@@ -1,5 +1,6 @@
 //load objectId constructor functionc
 const {ObjectID} = require('mongodb');
+const {Todo} = require('./../../models/todo');
 //----------USERS-----------------------------------------------------
 const{User} = require('./../../models/user');
 const jwt = require('jsonwebtoken');
@@ -18,12 +19,14 @@ const usersArray = [{
 }, {
   _id: userTwoID,
   email: 'bradenjames@example.com',
-  password: 'userTwoPass'
+  password: 'userTwoPass',
+  tokens: [{
+    access: 'auth',
+    token: jwt.sign({_id:userTwoID, access: 'auth'}, 'secretValue').toString()
+  }]
 }];
 
 //----------TODOS-----------------------------------------------------
-const {Todo} = require('./../../models/todo');
-
 const todosArray = [{
   _id: new ObjectID(),
   text: 'First test TODO example',
